@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1b1420">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Lodestone Dew</title>
+<style>
+:root{--ink:#2a1f2d;--cream:#f6e7cf;--coral:#ff7a5c;--teal:#53d6c4;--plum:#5b3f6e;--bg:#1b1420}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--cream);font-family:ui-monospace,"SF Mono",Menlo,Consolas,"Courier New",monospace;overflow:hidden;touch-action:none;overscroll-behavior:none}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:radial-gradient(120% 80% at 50% 0%,#33243b 0%,#1b1420 60%)}
+#top{width:100%;max-width:560px;display:flex;justify-content:space-between;align-items:center;padding:10px 14px 6px;font-size:13px;letter-spacing:.06em;gap:10px}
+#lvname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lvname b{color:#ffd36b;font-weight:700}
+#meter{display:flex;align-items:center;gap:8px;white-space:nowrap}
+#bar{width:84px;height:10px;border-radius:6px;background:#00000066;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px #ffffff22}
+#fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#7d6bc4,#c9b8ff);transition:width .2s}
+#needmark{position:absolute;top:-2px;bottom:-2px;width:2px;background:#ffd36b}
+#stage{flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0;position:relative}
+#cv{image-rendering:pixelated;image-rendering:crisp-edges;display:block;border-radius:8px;box-shadow:0 0 0 2px #00000066,0 14px 50px #000a;touch-action:none}
+#hint{position:absolute;left:50%;transform:translateX(-50%);top:10px;max-width:min(92%,420px);background:#1b1420d9;color:var(--cream);padding:9px 13px;border-radius:12px;font-size:12.5px;line-height:1.45;text-align:center;pointer-events:none;transition:opacity .6s;box-shadow:0 4px 18px #0007;border:1px solid #ffffff1a}
+#toast{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:#ff7a5ce6;color:#2a1f2d;padding:7px 12px;border-radius:10px;font-size:12px;pointer-events:none;opacity:0;transition:opacity .4s;white-space:nowrap}
+#bottom{display:flex;gap:12px;padding:8px 12px 14px;align-items:center;justify-content:center}
+button{font:inherit;color:var(--ink);background:var(--cream);border:0;border-radius:14px;padding:10px 14px;font-size:16px;box-shadow:0 4px 0 #0007;cursor:pointer;touch-action:manipulation;min-width:48px;min-height:46px}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 #0007}
+button.ghost{background:#ffffff14;color:var(--cream);box-shadow:0 4px 0 #0005}
+#phase{width:96px;height:58px;font-size:26px;border-radius:20px;background:linear-gradient(180deg,#ffe2b8,#f2b98d);transition:background .3s}
+#phase.moon{background:linear-gradient(180deg,#9fe3d0,#4f9c9a);color:#10232b}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#160f1bcc;gap:16px;text-align:center;padding:24px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:5}
+.hidden{display:none!important}
+h1{margin:0;font-size:38px;letter-spacing:.08em;line-height:1.05;color:#f6e7cf;text-shadow:3px 3px 0 #5b3f6e,6px 6px 0 #00000066}
+h1 span{color:#c9b8ff}
+.sub{opacity:.8;font-size:13px;max-width:300px;line-height:1.5}
+.card{background:#2a1f2df2;border:1px solid #ffffff1f;border-radius:18px;padding:20px 22px;box-shadow:0 20px 60px #000a;display:flex;flex-direction:column;gap:14px;align-items:center;max-width:340px}
+#levels{display:grid;grid-template-columns:repeat(3,82px);gap:10px}
+#levels button{height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:20px;padding:4px}
+#levels button small{font-size:9.5px;opacity:.75;letter-spacing:.02em}
+#levels button.done{background:linear-gradient(180deg,#d8f0c8,#a9d48f)}
+#levels button.locked{opacity:.38}
+#levels .chap{grid-column:1/-1;font-size:11px;letter-spacing:.14em;opacity:.7;text-align:left;margin-top:6px}
+#levels .st{font-size:10px;color:#8a5a00;letter-spacing:.05em;height:11px}
+#menu .card{max-height:92vh;overflow-y:auto}
+#tstars{font-size:13px;color:#ffd36b;letter-spacing:.08em}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.big{font-size:44px;line-height:1}
+.tiny{font-size:11px;opacity:.6}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top"><div id="lvname">lodestone dew</div><div id="meter"><span id="mtxt">dew</span><div id="bar"><div id="fill"></div><div id="needmark"></div></div></div></div>
+  <div id="stage"><canvas id="cv" width="180" height="320"></canvas><div id="hint"></div><div id="toast"></div></div>
+  <div id="bottom">
+    <button class="ghost" id="bmenu" aria-label="menu">&#9776;</button>
+    <button class="ghost" id="breset" aria-label="reset">&#8634;</button>
+    <button id="phase" aria-label="shift world">&#9728;</button>
+    <button class="ghost" id="bhint" aria-label="hint">?</button>
+    <button class="ghost" id="bsound" aria-label="sound">&#9834;</button>
+  </div>
+</div>
+
+<div class="overlay" id="title">
+  <h1>lodestone<br><span>dew</span></h1>
+  <div class="sub">a small strange garden that drinks magnetic water. coax the dew with magnets, light and two overlapping worlds.</div>
+  <div class="row"><button id="bplay">play</button><button class="ghost" id="blevels">levels</button></div>
+  <div id="tstars"></div>
+  <div class="tiny">best with sound &middot; phone or desktop</div>
+</div>
+
+<div class="overlay hidden" id="menu">
+  <div class="card">
+    <div style="font-size:15px;letter-spacing:.1em">the garden <span id="mstars" style="color:#ffd36b;font-size:12px"></span></div>
+    <div id="levels"></div>
+    <div class="row"><button class="ghost" id="bclose">back</button></div>
+    <div class="tiny">tap a magnet: on/off &middot; hold it: flip pole<br>keys: space shift &middot; 1-9 magnets &middot; shift+num flip &middot; r reset</div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="win">
+  <div class="card">
+    <div class="big">&#10047;</div>
+    <div id="winstars" style="font-size:26px;letter-spacing:.15em;color:#ffd36b"></div>
+    <div id="wintxt" style="font-size:16px">bloomed</div>
+    <div class="sub" id="winsub"></div>
+    <div class="row"><button class="ghost" id="bstay">admire</button><button id="bnext">next &rarr;</button></div>
+  </div>
+</div>
+
+<script>
+(()=>{'use strict';
+// ================= constants =================
+const W=180,H=320,TS=10,COLS=18,ROWS=32;
+const HI=7,HI2=HI*HI,REST=4.2,KP=0.11,KN=0.32,GRAV=0.05,PR=1.7,PR2=PR*PR,MAGK=16000,MAGC2=36,FMAX=0.5,VSIG=0.06,VBETA=0.18,DAMP=0.999,FRIC=0.82,SUB=2;
+const HC=Math.ceil(W/HI),HR=Math.ceil(H/HI);
+const T={E:0,W:1,WA:2,WB:3,X:4,P:5,M:6,MA:7,MB:8,PR1:9,PR2:10,L:11};
+const LAMPCH={'>':[1,0,2],'<':[-1,0,2],'v':[0,1,2],'^':[0,-1,2],'R':[1,0,0],'L':[-1,0,0],'D':[0,1,0],'U':[0,-1,0],'r':[1,0,1],'l':[-1,0,1],'d':[0,1,1],'u':[0,-1,1]};
+const E18='#................#',F18='##################';
+
+// ================= levels =================
+function rows(o){const a=[];for(let r=0;r<ROWS;r++)a.push(r===0||r===ROWS-1?F18:(o[r]||E18));return a;}
+const LEVELS=[
+{name:'first dew',n:100,need:.6,hint:'the moss in the pot drinks lodestone dew.<br>tap the magnet to switch it on. tap again to let go.',
+ map:rows({4:'#...S............#',10:'#.............M..#',11:'##########.......#',26:'#..........#.....#',27:'#..........#PPPPP#',28:'#..........#PPPPP#',29:'#..........#PPPPP#',30:'#xxxxxxxxxx#PPPPP#'})},
+{name:'hand to hand',n:100,need:.6,hint:'dew loves a strong field. pass it from magnet to magnet, then let it fall.',
+ map:rows({18:'#.....M...M......#',21:'#......#.........#',22:'#..M...#.........#',23:'#......#.........#',24:'#......#.........#',25:'#......#.........#',26:'#......#.....#...#',27:'#......#PPPPP#...#',28:'#..S...#PPPPP#...#',29:'#......#PPPPP#...#',30:'#......#PPPPP#xxx#'})},
+{name:'two worlds',n:100,need:.6,hint:'tap &#9790; to shift worlds. striped walls only exist on one side.',
+ map:rows({3:'#.......S........#',7:'#...a.......a....#',8:'#...a.......a....#',9:'#...aaaaaaaaa....#',16:'#...b.......b....#',17:'#...b.......b....#',18:'#...bbbbbbbbb....#',25:'#...#.......#....#',26:'#...#PPPPPPP#....#',27:'#...#PPPPPPP#....#',28:'#...#PPPPPPP#....#',29:'#...#PPPPPPP#....#',30:'#xxx#PPPPPPP#xxxx#'})},
+{name:'opposites',n:90,need:.6,hint:'hold a magnet to flip its pole. like poles cancel between them, opposite poles build a bridge. watch the filings.',
+ map:rows({6:'#..S.............#',10:'#....M.......M...#',13:'#....#...........#',14:'######...........#',17:'#.........#.....##',18:'#.........#PPPPP##',19:'#.........#PPPPP##',20:'#.........#PPPPP##',21:'#.........########',30:'#xxxxxxxxxxxxxxxx#'})},
+{name:'lamplight',n:110,need:.55,hint:'lamps boil dew away. the blob shields itself, so move it fast.',
+ map:rows({1:'#........v.......#',9:'#..S.............#',11:'#............M...#',12:'#######..........#',25:'#.........#.....##',26:'#.........#PPPPP##',27:'#.........#PPPPP##',28:'#.........#PPPPP##',29:'#.........#PPPPP##',30:'#xxxxxxxxx#PPPPP##'})},
+{name:'prism',n:110,need:.55,hint:'prisms bend light. a wall from the other world can catch the beam.',
+ map:rows({10:'#.......M........#',12:'#............M...#',13:'#...M............#',16:'#......#.........#',17:'#......#.b.......#',18:'#..S...#.........#',19:'#......#.........#',20:'########.........#',23:'#>......./.......#',25:'#.........#.....##',26:'#.........#PPPPP##',27:'#.........#PPPPP##',28:'#.........#PPPPP##',29:'#.........#PPPPP##',30:'#xxxxxxxxx#PPPPP##'})},
+{name:'ferry',n:110,need:.55,hint:'some magnets only exist in one world too. a faded magnet is waiting for its world.',
+ map:rows({1:'#......D.........#',21:'#..............A.#',23:'#...M.....B......#',24:'#......#.........#',25:'#......#aaaaa#...#',26:'#......#.....#PPP#',27:'#..S...#.....#PPP#',28:'#......#.....#PPP#',29:'#......#.....#PPP#',30:'#......#xxxxx#PPP#'})},
+{name:'two blooms',n:120,need:.6,needEach:.25,pol:{1:-1},hint:'two pots, two flowers. the dew has to split.',
+ map:rows({3:'#.......S........#',9:'#.....a....a.....#',10:'#.....aaaaaa.....#',12:'#..M..........M..#',25:'##...#......#...##',26:'##PPP#......#PPP##',27:'##PPP#......#PPP##',28:'##PPP#......#PPP##',29:'##PPP#......#PPP##',30:'##PPP#xxxxxx#PPP##'})},
+{"name":"stairs","n":110,"need":0.55,"hint":"three magnets, one long way down. hand it along.",
+ map:rows({"3":"#.S..............#","5":"#######..........#","6":"#..........M.....#","14":"#....########....#","15":"#..............M.#","21":"#.......M........#","25":"#.........#......#","26":"#PPPPPPPPP#......#","27":"#PPPPPPPPP#......#","28":"#PPPPPPPPP#......#","29":"#PPPPPPPPP#......#","30":"#PPPPPPPPP#xxxxxx#"})},
+{"name":"trapdoor","n":100,"need":0.55,"hint":"the floor under you is only half real.",
+ map:rows({"3":"#........S.......#","6":"#.....a....a.....#","7":"#.....a....a.....#","8":"#.....aaaaaa.....#","13":"#..M.............#","20":"#.....bbbbbb.....#","25":"#....#.......#...#","26":"#PPPP#.......#...#","27":"#PPPP#.......#...#","28":"#PPPP#.......#...#","29":"#PPPP#.......#...#","30":"#PPPP#xxxxxxx#xxx#"})},
+{"name":"eclipse","n":110,"need":0.55,"hint":"a wall from the other world makes good shade.",
+ map:rows({"3":"#..S.............#","6":"#######..........#","7":"#..........M.....#","14":"#>.b.............#","15":"#.....M..........#","21":"#........#########","25":"#........#.......#","26":"#PPPPPPPP#.......#","27":"#PPPPPPPP#.......#","28":"#PPPPPPPP#.......#","29":"#PPPPPPPP#.......#","30":"#PPPPPPPP#xxxxxxx#"})},
+{"name":"tug of war","n":100,"need":0.55,"pol":{"1":-1},"hint":"two magnets pulling the same way is a tug of war. flip one to settle it.",
+ map:rows({"3":"#........S.......#","9":"#.M...........M..#","10":"#.......#........#","11":"#.......#........#","12":"#.......#........#","13":"#.......#........#","25":"#..........#.....#","26":"#xxxxxxxxxx#PPPPP#","27":"#xxxxxxxxxx#PPPPP#","28":"#xxxxxxxxxx#PPPPP#","29":"#xxxxxxxxxx#PPPPP#","30":"#xxxxxxxxxx#PPPPP#"})},
+{"name":"ferry back","n":110,"need":0.55,"hint":"one magnet per world. the dew rides between them.",
+ map:rows({"3":"#.............S..#","5":"#...........######","8":"#....A.......B...#","14":"#...aaaaaaaaaaaa.#","18":"#.......B........#","24":"#.....#....#.....#","25":"#.....#PPPP#.....#","26":"#.....#PPPP#.....#","27":"#.....#PPPP#.....#","28":"#.....#PPPP#.....#","29":"#.....#PPPP#.....#","30":"#xxxxx#PPPP#xxxxx#"})},
+{"name":"three blooms","n":150,"need":0.55,"needEach":0.15,"hint":"three pots. share it out.",
+ map:rows({"3":"#........S.......#","5":"#.......a.a......#","6":"#.......aaa......#","10":"#...M...M.....M..#","24":"#.....#....#.....#","25":"#PPPPP#PPPP#PPPPP#","26":"#PPPPP#PPPP#PPPPP#","27":"#PPPPP#PPPP#PPPPP#","28":"#PPPPP#PPPP#PPPPP#","29":"#PPPPP#PPPP#PPPPP#","30":"#PPPPP#PPPP#PPPPP#"})},
+{"name":"long night","n":130,"need":0.5,"hint":"everything you have learned, in the dark.",
+ map:rows({"1":"#...............D#","3":"#........S.......#","9":"#.....a.....a....#","10":"#.....aaaaaaa....#","13":"#..M........B....#","17":"#.....bbbbbbbbbb.#","20":"#..............M.#","22":"#>.b.............#","24":"#.......#........#","25":"#.......#........#","26":"#xxxxxxx#PPPPPPP.#","27":"#xxxxxxx#PPPPPPP.#","28":"#xxxxxxx#PPPPPPP.#","29":"#xxxxxxx#PPPPPPP.#","30":"#xxxxxxx#PPPPPPP.#"})},
+{name:'the bench',n:130,need:2,sandbox:true,hint:'free play. tap empty space to place a magnet (up to 6), tap it to switch, hold to flip. &#8634; pours fresh dew.',
+ map:rows({2:'#..S.............#',8:'#........aaaa....#',14:'#...bbbb.........#',20:'#>..........\\....#',25:'##...#...........#',26:'##PPP#...........#',27:'##PPP#...........#',28:'##PPP#...........#',29:'##PPP#...........#',30:'##PPP#xxxxxxxxxxx#'})}
+];
+
+// ================= sim =================
+function mkMag(c,r,ph){return {c,r,x:c*TS+5,y:r*TS+5,phase:ph,on:false,pol:1,free:false};}
+function parseLevel(def){
+  const tiles=new Uint8Array(COLS*ROWS),lampAt=new Int16Array(COLS*ROWS).fill(-1);
+  const magnets=[],lamps=[];let spawn={x:90,y:40};
+  for(let r=0;r<ROWS;r++){const row=def.map[r];for(let c=0;c<COLS;c++){const ch=row[c]||'.',i=r*COLS+c;let t=T.E;
+    switch(ch){case '#':t=T.W;break;case 'a':t=T.WA;break;case 'b':t=T.WB;break;case 'x':t=T.X;break;case 'P':t=T.P;break;
+      case 'M':t=T.M;magnets.push(mkMag(c,r,2));break;case 'A':t=T.MA;magnets.push(mkMag(c,r,0));break;case 'B':t=T.MB;magnets.push(mkMag(c,r,1));break;
+      case '/':t=T.PR1;break;case '\\':t=T.PR2;break;case 'S':spawn={x:c*TS+5,y:r*TS+5};break;
+      default:if(LAMPCH[ch]){t=T.L;const d=LAMPCH[ch];lampAt[i]=lamps.length;lamps.push({c,r,dx:d[0],dy:d[1],phase:d[2]});}}
+    tiles[i]=t;}}
+  if(def.pol)for(const k in def.pol)if(magnets[k])magnets[k].pol=def.pol[k];
+  const solid=[new Uint8Array(COLS*ROWS),new Uint8Array(COLS*ROWS)];
+  for(let ph=0;ph<2;ph++)for(let i=0;i<tiles.length;i++){const t=tiles[i];
+    solid[ph][i]=(t===T.W||t===T.M||t===T.PR1||t===T.PR2||t===T.L||((t===T.WA||t===T.MA)&&ph===0)||((t===T.WB||t===T.MB)&&ph===1))?1:0;}
+  // pots
+  const potId=new Int16Array(COLS*ROWS).fill(-1),pots=[];
+  for(let i=0;i<tiles.length;i++){if(tiles[i]!==T.P||potId[i]>=0)continue;const id=pots.length,st=[i];potId[i]=id;
+    const p={minx:1e9,maxx:-1,miny:1e9,maxy:-1,cells:0};
+    while(st.length){const k=st.pop(),c=k%COLS,r=(k/COLS)|0;p.cells++;p.minx=Math.min(p.minx,c*TS);p.maxx=Math.max(p.maxx,c*TS+TS);p.miny=Math.min(p.miny,r*TS);p.maxy=Math.max(p.maxy,r*TS+TS);
+      for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const cc=c+dc,rr=r+dr;if(cc<0||rr<0||cc>=COLS||rr>=ROWS)continue;const j=rr*COLS+cc;if(tiles[j]===T.P&&potId[j]<0){potId[j]=id;st.push(j);}}}
+    pots.push(p);}
+  return {tiles,solid,magnets,lamps,lampAt,spawn,potId,pots};
+}
+function createSim(def){
+  const lv=parseLevel(def),cap=def.n||100;
+  const f=()=>new Float32Array(cap);
+  const s={def,lv,phase:def.startPhase||0,cap,n:0,N0:0,x:f(),y:f(),px:f(),py:f(),vx:f(),vy:f(),life:f(),bs:f(),bux:f(),buy:f(),rho:f(),rhoN:f(),
+    alive:new Uint8Array(cap),coll:new Uint8Array(cap),inPot:new Int8Array(cap).fill(-1),
+    head:new Int32Array(HC*HR),next:new Int32Array(cap),hcx:new Int16Array(cap),hcy:new Int16Array(cap),
+    pa:new Int32Array(cap*60),pb:new Int32Array(cap*60),pq:new Float32Array(cap*60),pnx:new Float32Array(cap*60),pny:new Float32Array(cap*60),np:0,
+    occ:new Uint8Array(W*H),beams:[],hits:[],events:[],counts:new Int32Array(Math.max(1,lv.pots.length)),frame:0,winT:0,won:false,lost:false,aliveN:0,act:[]};
+  spawnFluid(s,lv.spawn.x,lv.spawn.y,cap);s.N0=s.n;s.aliveN=s.n;
+  return s;
+}
+function solidCR(sol,c,r){return (c<0||r<0||c>=COLS||r>=ROWS)?1:sol[r*COLS+c];}
+function solidPx(s,x,y){return solidCR(s.lv.solid[s.phase],Math.floor(x/TS),Math.floor(y/TS));}
+function spawnFluid(s,cx,cy,count){
+  const pts=[],sp=3.0;
+  for(let j=-16;j<=16;j++)for(let i=-16;i<=16;i++){const x=cx+i*sp+(j&1)*sp/2,y=cy+j*sp*0.866;
+    if(x<3||x>W-3||y<3||y>H-3||solidPx(s,x,y))continue;pts.push([x,y,(x-cx)**2+(y-cy)**2]);}
+  pts.sort((a,b)=>a[2]-b[2]);s.n=0;
+  for(let k=0;k<pts.length&&s.n<Math.min(count,s.cap);k++){const i=s.n++;s.x[i]=s.px[i]=pts[k][0];s.y[i]=s.py[i]=pts[k][1];s.vx[i]=s.vy[i]=0;s.life[i]=1;s.alive[i]=1;s.inPot[i]=-1;}
+}
+function activeList(s){const a=[];for(const m of s.lv.magnets)if(m.on&&(m.phase===2||m.phase===s.phase))a.push({x:m.x,y:m.y,q:m.pol});return a;}
+function fieldAt(act,x,y){let bx=0,by=0;for(const m of act){const dx=x-m.x,dy=y-m.y,inv=m.q/(dx*dx+dy*dy+MAGC2);bx+=dx*inv;by+=dy*inv;}return [bx,by];}
+function substep(s){
+  const n=s.n,X=s.x,Y=s.y,PX=s.px,PY=s.py,VX=s.vx,VY=s.vy,A=s.alive,act=s.act,na=act.length;
+  for(let i=0;i<n;i++){if(!A[i])continue;let fx=0,fy=GRAV;
+    if(na){let bx=0,by=0,jxx=0,jxy=0,jyy=0;const x=X[i],y=Y[i];
+      for(let k=0;k<na;k++){const m=act[k],dx=x-m.x,dy=y-m.y,D=dx*dx+dy*dy+MAGC2,inv=m.q/D,inv2=2*inv/D;bx+=dx*inv;by+=dy*inv;jxx+=inv-inv2*dx*dx;jyy+=inv-inv2*dy*dy;jxy-=inv2*dx*dy;}
+      let gx=2*MAGK*(jxx*bx+jxy*by),gy=2*MAGK*(jxy*bx+jyy*by);const f2=gx*gx+gy*gy;if(f2>FMAX*FMAX){const k=FMAX/Math.sqrt(f2);gx*=k;gy*=k;}
+      fx+=gx;fy+=gy;const bm=Math.sqrt(bx*bx+by*by);s.bs[i]=bm;if(bm>1e-7){s.bux[i]=bx/bm;s.buy[i]=by/bm;}
+    }else s.bs[i]=0;
+    VX[i]=(VX[i]+fx)*DAMP;VY[i]=(VY[i]+fy)*DAMP;PX[i]=X[i];PY[i]=Y[i];X[i]+=VX[i];Y[i]+=VY[i];}
+  // hash
+  const head=s.head,next=s.next;head.fill(-1);
+  for(let i=0;i<n;i++){if(!A[i])continue;let cx=Math.floor(X[i]/HI),cy=Math.floor(Y[i]/HI);cx=cx<0?0:cx>=HC?HC-1:cx;cy=cy<0?0:cy>=HR?HR-1:cy;s.hcx[i]=cx;s.hcy[i]=cy;const k=cy*HC+cx;next[i]=head[k];head[k]=i;}
+  let np=0;const pa=s.pa,pb=s.pb,pq=s.pq,pnx=s.pnx,pny=s.pny,maxp=pa.length;
+  for(let i=0;i<n;i++){if(!A[i])continue;const cx=s.hcx[i],cy=s.hcy[i],xi=X[i],yi=Y[i];
+    for(let oy=-1;oy<=1;oy++){const yy=cy+oy;if(yy<0||yy>=HR)continue;for(let ox=-1;ox<=1;ox++){const xx=cx+ox;if(xx<0||xx>=HC)continue;
+      for(let j=head[yy*HC+xx];j!==-1;j=next[j]){if(j<=i)continue;const dx=X[j]-xi,dy=Y[j]-yi,r2=dx*dx+dy*dy;
+        if(r2<HI2&&r2>1e-8&&np<maxp){const r=Math.sqrt(r2);pa[np]=i;pb[np]=j;pq[np]=r/HI;pnx[np]=dx/r;pny[np]=dy/r;np++;}}}}}
+  s.np=np;
+  // viscosity
+  for(let p=0;p<np;p++){const i=pa[p],j=pb[p],nx=pnx[p],ny=pny[p];const u=(VX[i]-VX[j])*nx+(VY[i]-VY[j])*ny;
+    if(u>0){const I=(1-pq[p])*(VSIG*u+VBETA*u*u)*0.5;X[i]-=I*nx;Y[i]-=I*ny;X[j]+=I*nx;Y[j]+=I*ny;}}
+  // density
+  const rho=s.rho,rhoN=s.rhoN;rho.fill(0);rhoN.fill(0);
+  for(let p=0;p<np;p++){const w=1-pq[p],w2=w*w,w3=w2*w;rho[pa[p]]+=w2;rho[pb[p]]+=w2;rhoN[pa[p]]+=w3;rhoN[pb[p]]+=w3;}
+  for(let p=0;p<np;p++){const i=pa[p],j=pb[p],w=1-pq[p];
+    let D=(0.5*KP*(rho[i]+rho[j]-2*REST)*w+0.5*KN*(rhoN[i]+rhoN[j])*w*w)*0.5;if(D>0.8)D=0.8;else if(D<-0.8)D=-0.8;
+    X[i]-=D*pnx[p];Y[i]-=D*pny[p];X[j]+=D*pnx[p];Y[j]+=D*pny[p];}
+  // collide
+  const sol=s.lv.solid[s.phase],tiles=s.lv.tiles;
+  for(let i=0;i<n;i++){if(!A[i])continue;collide(s,sol,i);
+    let vx=X[i]-PX[i],vy=Y[i]-PY[i];if(s.coll[i]){vx*=FRIC;vy*=FRIC;}const v2=vx*vx+vy*vy;if(v2>25){const k=5/Math.sqrt(v2);vx*=k;vy*=k;}VX[i]=vx;VY[i]=vy;
+    const c=Math.floor(X[i]/TS),r=Math.floor(Y[i]/TS);if(c>=0&&r>=0&&c<COLS&&r<ROWS&&tiles[r*COLS+c]===T.X){A[i]=0;s.events.push({t:'drain',x:X[i],y:Y[i]});}}
+}
+function collide(s,sol,i){
+  let x=s.x[i],y=s.y[i],hit=0;
+  if(x<PR){x=PR;hit=1}if(x>W-PR){x=W-PR;hit=1}if(y<PR){y=PR;hit=1}if(y>H-PR){y=H-PR;hit=1}
+  let c=Math.floor(x/TS),r=Math.floor(y/TS);
+  if(solidCR(sol,c,r)){const tx=c*TS,ty=r*TS;let best=1e9,nx=x,ny=y;
+    const cand=[[x-tx,c-1,r,tx-PR,y],[tx+TS-x,c+1,r,tx+TS+PR,y],[y-ty,c,r-1,x,ty-PR],[ty+TS-y,c,r+1,x,ty+TS+PR]];
+    for(const k of cand){if(solidCR(sol,k[1],k[2]))continue;if(k[0]<best){best=k[0];nx=k[3];ny=k[4];}}
+    if(best===1e9){let bd=1e9;for(let rr=r-3;rr<=r+3;rr++)for(let cc=c-3;cc<=c+3;cc++){if(solidCR(sol,cc,rr))continue;const d=(cc-c)**2+(rr-r)**2;if(d<bd){bd=d;nx=cc*TS+5;ny=rr*TS+5;}}}
+    x=nx;y=ny;hit=1;}
+  const c0=Math.floor((x-PR)/TS),c1=Math.floor((x+PR)/TS),r0=Math.floor((y-PR)/TS),r1=Math.floor((y+PR)/TS);
+  for(let rr=r0;rr<=r1;rr++)for(let cc=c0;cc<=c1;cc++){if(!solidCR(sol,cc,rr))continue;
+    const qx=Math.max(cc*TS,Math.min(x,cc*TS+TS)),qy=Math.max(rr*TS,Math.min(y,rr*TS+TS));const dx=x-qx,dy=y-qy,d2=dx*dx+dy*dy;
+    if(d2<PR2&&d2>1e-10){const d=Math.sqrt(d2),k=(PR-d)/d;x+=dx*k;y+=dy*k;hit=1;}}
+  s.x[i]=x;s.y[i]=y;s.coll[i]=hit;
+}
+function traceBeams(s){
+  s.beams.length=0;s.hits.length=0;const occ=s.occ;occ.fill(0);
+  for(let i=0;i<s.n;i++){if(!s.alive[i])continue;const x=Math.floor(s.x[i]),y=Math.floor(s.y[i]);
+    for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){const xx=x+ox,yy=y+oy;if(xx>=0&&yy>=0&&xx<W&&yy<H)occ[yy*W+xx]=1;}}
+  const tiles=s.lv.tiles,sol=s.lv.solid[s.phase];
+  for(const L of s.lv.lamps){if(!(L.phase===2||L.phase===s.phase))continue;
+    let dx=L.dx,dy=L.dy,x=L.c*TS+5+dx*5.5,y=L.r*TS+5+dy*5.5,sx=x,sy=y,rb=false,lastPr=-1,bounces=0;
+    for(let st=0;st<500;st++){const pxi=Math.floor(x),pyi=Math.floor(y);
+      if(pxi<0||pyi<0||pxi>=W||pyi>=H){s.beams.push({x0:sx,y0:sy,x1:x-dx,y1:y-dy,rb});break;}
+      const ti=Math.floor(pyi/TS)*COLS+Math.floor(pxi/TS),t=tiles[ti];
+      if(t===T.PR1||t===T.PR2){if(ti!==lastPr&&bounces<8){const cx=(ti%COLS)*TS+5,cy=Math.floor(ti/COLS)*TS+5;s.beams.push({x0:sx,y0:sy,x1:cx,y1:cy,rb});
+          const ndx=t===T.PR1?-dy:dy,ndy=t===T.PR1?-dx:dx;dx=ndx;dy=ndy;x=cx;y=cy;sx=cx;sy=cy;rb=true;lastPr=ti;bounces++;}
+        x+=dx;y+=dy;continue;}
+      if(sol[ti]){s.beams.push({x0:sx,y0:sy,x1:x-dx,y1:y-dy,rb});break;}
+      if(occ[pyi*W+pxi]){s.beams.push({x0:sx,y0:sy,x1:x,y1:y,rb});s.hits.push({x,y,rb});break;}
+      x+=dx;y+=dy;}}
+  for(const h of s.hits){for(let i=0;i<s.n;i++){if(!s.alive[i])continue;const dx=s.x[i]-h.x,dy=s.y[i]-h.y;
+      if(dx*dx+dy*dy<20){s.life[i]-=0.06;if(s.life[i]<=0){s.alive[i]=0;s.events.push({t:'steam',x:s.x[i],y:s.y[i]});}}}}
+}
+function stepSim(s){
+  s.events.length=0;s.act=activeList(s);
+  for(let k=0;k<SUB;k++)substep(s);
+  traceBeams(s);
+  const cnt=s.counts;cnt.fill(0);let alive=0;
+  for(let i=0;i<s.n;i++){if(!s.alive[i])continue;alive++;const c=Math.floor(s.x[i]/TS),r=Math.floor(s.y[i]/TS);
+    const pid=(c>=0&&r>=0&&c<COLS&&r<ROWS)?s.lv.potId[r*COLS+c]:-1;
+    if(pid>=0){cnt[pid]++;if(s.inPot[i]!==pid){s.inPot[i]=pid;s.events.push({t:'drip',x:s.x[i],y:s.y[i]});}}else s.inPot[i]=-1;}
+  s.aliveN=alive;
+  if(!s.def.sandbox&&!s.won){const needC=Math.ceil(s.def.need*s.N0);let tot=0;for(let k=0;k<cnt.length;k++)tot+=cnt[k];
+    let each=true;if(s.def.needEach){const ne=Math.ceil(s.def.needEach*s.N0);for(let k=0;k<s.lv.pots.length;k++)if(cnt[k]<ne)each=false;}
+    if(tot>=needC&&each){if(++s.winT>=40){s.won=true;s.events.push({t:'win'});}}else s.winT=0;
+    s.lost=alive<needC;}
+  s.frame++;
+}
+function totalInPots(s){let t=0;for(let k=0;k<s.counts.length;k++)t+=s.counts[k];return t;}
+
+// ================= palette / render =================
+const hx=h=>{const n=parseInt(h.slice(1),16);return [n>>16&255,n>>8&255,n&255];};
+const pk=c=>((255<<24)|(c[2]<<16)|(c[1]<<8)|c[0])>>>0;
+const C=h=>pk(hx(h));
+const shade=(c,f)=>{const r=c&255,g=c>>8&255,b=c>>16&255;return ((255<<24)|(Math.min(255,b*f)<<16)|(Math.min(255,g*f)<<8)|Math.min(255,r*f))>>>0;};
+const PAL=[
+ {bg:[C('#f7e2bd'),C('#f1c79c'),C('#e7a582')],motif:C('#eab894'),motif2:C('#f9ecd2'),wall:C('#6e4436'),wallTop:C('#b2704f'),wallDark:C('#4a2b25'),hatch:C('#8f5a44'),ghost:C('#c48e72'),filing:C('#7a3f33'),drain:C('#2c1a22'),drainLip:C('#4d2c33'),steam:C('#fff4e2'),vig:0.86},
+ {bg:[C('#1a2d40'),C('#21424f'),C('#2c5c5c')],motif:C('#2b5160'),motif2:C('#9fe3d0'),wall:C('#8ccab2'),wallTop:C('#d9f3e2'),wallDark:C('#4f8a78'),hatch:C('#6fae98'),ghost:C('#3f7383'),filing:C('#bff3e4'),drain:C('#0b1520'),drainLip:C('#17303c'),steam:C('#e6fff7'),vig:0.8}];
+const FL=[[C('#120c18'),C('#251a35'),C('#433268'),C('#8a76d0'),C('#f3eeff')],[C('#0b0f1a'),C('#18233a'),C('#2c4468'),C('#6fb6d8'),C('#ecfffb')]];
+const RIM=[C('#5c4a99'),C('#3e7f9a')];
+const TERRA={base:C('#c4623f'),top:C('#e8906a'),dark:C('#8a3d26'),inside:C('#5e2a1d'),inside2:C('#4a2117'),soil:C('#3b241b'),soil2:C('#5a3a2a')};
+const COLN=C('#ff6f59'),COLS_=C('#4fd6c6'),COLNd=C('#9c4c42'),COLSd=C('#3b8a83'),INK=C('#2a1f2d'),GOLD=C('#ffd36b'),BEAMC=C('#fffbe0'),BEAMG=C('#ffcf55');
+const RAIN=[C('#ff6b6b'),C('#ffb84d'),C('#ffe866'),C('#7be08a'),C('#5cc8ff'),C('#b48cff')];
+const STEM=C('#6fa35b'),LEAF=C('#a6d672'),LEAFd=C('#4f7d3f'),PET=C('#2a1f3d'),PETh=C('#b8a6ff');
+const BAY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16);
+const bay=(x,y)=>BAY[((y&3)<<2)|(x&3)];
+const GLYPH={N:[5,7,5,5,5],S:[7,4,7,1,7]};// 3-bit rows: N= 101,111,101,101,101  S=111,100,111,001,111
+function hash2(x,y){let h=(x*374761393+y*668265263)|0;h=(h^(h>>>13))*1274126177|0;return ((h^(h>>>16))>>>0)/4294967296;}
+
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const img=ctx.createImageData(W,H),buf=new Uint32Array(img.data.buffer);
+const dens=new Float32Array(W*H);
+let layers=null;
+
+function buildLayer(lv,ph){
+  const P=PAL[ph],L=new Uint32Array(W*H),sol=lv.solid[ph],tl=lv.tiles;
+  for(let y=0;y<H;y++){const t=y/(H-1)*2;for(let x=0;x<W;x++){const seg=t<1?0:1,f=t-seg;L[y*W+x]=bay(x,y)<f?P.bg[seg+1]:P.bg[seg];}}
+  // wallpaper motif
+  for(let gy=0;gy<H;gy+=16)for(let gx=((gy/16)&1)*8;gx<W;gx+=16){const cx=gx+4,cy=gy+6;
+    if(ph===0){for(const [ox,oy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]])put(L,cx+ox,cy+oy,ox||oy?P.motif:P.motif2);}
+    else{const r=hash2(gx,gy);put(L,cx,cy,r<.3?P.motif2:P.motif);if(r<.12){put(L,cx+1,cy,P.motif);put(L,cx-1,cy,P.motif);put(L,cx,cy+1,P.motif);put(L,cx,cy-1,P.motif);}}}
+  const isPotWall=(c,r)=>{for(const [dc,dr] of [[1,0],[-1,0],[0,-1]]){const cc=c+dc,rr=r+dr;if(cc>=0&&rr>=0&&cc<COLS&&rr<ROWS&&tl[rr*COLS+cc]===T.P)return true;}
+    if(r+1<ROWS&&c>=0&&tl[(r+1)*COLS+c]===T.P)return true;return false;};
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const t=tl[r*COLS+c],x0=c*TS,y0=r*TS,s=sol[r*COLS+c];
+    if(t===T.X){for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const col=y<2&&((x+(y?1:0))&1)?P.drainLip:(bay(x0+x,y0+y)<y/14?P.drain:shade(P.drain,1.25));L[(y0+y)*W+x0+x]=col;}continue;}
+    if(t===T.P){const below=r+1<ROWS?tl[(r+1)*COLS+c]:T.W;for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){let col=bay(x0+x,y0+y)<.5?TERRA.inside:TERRA.inside2;
+        if(below!==T.P&&y>=6)col=bay(x0+x,y0+y)<.3?TERRA.soil2:TERRA.soil;L[(y0+y)*W+x0+x]=col;}continue;}
+    if(t===T.PR1||t===T.PR2){drawPrism(L,x0,y0,t,ph);continue;}
+    if(!s){ if(t===T.WA||t===T.WB||t===T.MA||t===T.MB){for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const edge=x===0||y===0||x===TS-1||y===TS-1;if(edge&&((x+y)&1))L[(y0+y)*W+x0+x]=P.ghost;}} continue;}
+    const pot=t===T.W&&isPotWall(c,r);
+    const base=pot?TERRA.base:P.wall,top=pot?TERRA.top:P.wallTop,dark=pot?TERRA.dark:P.wallDark;
+    const up=solidCR(sol,c,r-1),dn=solidCR(sol,c,r+1),lf=solidCR(sol,c-1,r),rt=solidCR(sol,c+1,r);
+    for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){let col=base;const gx=x0+x,gy=y0+y;
+      if(!pot&&hash2(gx,gy)<.07)col=dark;
+      if((t===T.WA||t===T.WB)&&((gx+gy+(t===T.WB?3:0))%6===0))col=P.hatch;
+      if(pot&&(gy%5===0))col=shade(base,.9);
+      if(!up&&y<2)col=y===0?top:(bay(gx,gy)<.5?top:base);
+      if(!dn&&y===TS-1)col=dark; if(!lf&&x===0)col=up||y>1?shade(base,.82):col; if(!rt&&x===TS-1)col=shade(base,.75);
+      L[gy*W+gx]=col;}
+    if(t===T.L){const li=lv.lampAt[r*COLS+c],lp=lv.lamps[li],on=lp.phase===2||lp.phase===ph;
+      for(let y=-3;y<=3;y++)for(let x=-3;x<=3;x++){const d=x*x+y*y;if(d<=10)L[(y0+5+y)*W+x0+5+x]=d>6?INK:(on?(d<2?BEAMC:BEAMG):C('#5d4a3e'));}
+      const nx=x0+5+lp.dx*4,ny=y0+5+lp.dy*4;for(let k=-1;k<=1;k++){put(L,nx+(lp.dy?k:0),ny+(lp.dx?k:0),on?BEAMC:C('#7a6656'));}
+      if(lp.phase!==2){put(L,x0+1,y0+1,lp.phase===0?C('#ffb36b'):C('#9fe3d0'));put(L,x0+2,y0+1,lp.phase===0?C('#ffb36b'):C('#9fe3d0'));}}
+  }
+  // vignette
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const dx=(x-W/2)/(W/2),dy=(y-H/2)/(H/2),d=Math.sqrt(dx*dx*0.9+dy*dy*0.6);if(d>0.78&&bay(x,y)<(d-0.78)*2.2){const i=y*W+x;L[i]=shade(L[i],P.vig);}}
+  return L;
+}
+function put(L,x,y,c){if(x>=0&&y>=0&&x<W&&y<H)L[y*W+x]=c;}
+function drawPrism(L,x0,y0,t,ph){const glass=ph?C('#cfefff'):C('#fff7e8'),glass2=ph?C('#9fd6ee'):C('#f3d6c0');
+  for(let y=0;y<TS;y++)for(let x=0;x<TS;x++){const u=t===T.PR1?(x+y):(x+(TS-1-y));const inTri=t===T.PR1?(x+y>=TS-1):(x>=y);
+    if(Math.abs(u-(TS-1))<=0){L[(y0+y)*W+x0+x]=RAIN[(x>>1)%6];continue;}
+    if(inTri)L[(y0+y)*W+x0+x]=bay(x0+x,y0+y)<.5?glass:glass2;}
+  // base plinth
+  for(let x=0;x<TS;x++)L[(y0+TS-1)*W+x0+x]=ph?C('#4f8a78'):C('#6e4436');}
+
+function compose(p){if(p<=0.001){buf.set(layers[0]);return;}if(p>=0.999){buf.set(layers[1]);return;}
+  const A=layers[0],B=layers[1];for(let y=0;y<H;y++){const ro=y*W;for(let x=0;x<W;x++){const i=ro+x;buf[i]=bay(x,y)<p?B[i]:A[i];}}}
+function px(x,y,c){x|=0;y|=0;if(x>=0&&y>=0&&x<W&&y<H)buf[y*W+x]=c;}
+function solidPix(s,x,y){return solidCR(s.lv.solid[s.phase],Math.floor(x/TS),Math.floor(y/TS));}
+
+function renderFilings(s){const act=s.act;if(!act.length)return;const col=PAL[s.phase].filing;
+  for(let gy=3;gy<H;gy+=6)for(let gx=3+((gy/6)&1)*3;gx<W;gx+=6){if(solidPix(s,gx,gy))continue;const [bx,by]=fieldAt(act,gx,gy),m=Math.hypot(bx,by);
+    if(m<0.012)continue;const st=Math.min(1,(m-0.012)*22);if(bay(gx,gy)>st+0.1)continue;const ux=bx/m,uy=by/m,len=m>0.05?2:1;
+    for(let k=-len;k<=len;k++){const x=Math.round(gx+ux*k),y=Math.round(gy+uy*k);if(!solidPix(s,x,y))px(x,y,col);}}}
+
+function renderBeams(s,t){
+  for(const b of s.beams){const dx=Math.sign(b.x1-b.x0),dy=Math.sign(b.y1-b.y0),len=Math.max(Math.abs(b.x1-b.x0),Math.abs(b.y1-b.y0));
+    const ox=dy?1:0,oy=dx?1:0;
+    for(let k=0;k<=len;k++){const x=Math.floor(b.x0+dx*k),y=Math.floor(b.y0+dy*k);
+      if(b.rb){const sh=((k+(t>>1))>>2)%6;px(x-ox,y-oy,RAIN[sh]);px(x,y,RAIN[(sh+2)%6]);px(x+ox,y+oy,RAIN[(sh+4)%6]);if(bay(x,y+t)<.25){px(x-2*ox,y-2*oy,RAIN[(sh+1)%6]);px(x+2*ox,y+2*oy,RAIN[(sh+3)%6]);}}
+      else{px(x,y,BEAMC);if(bay(x+t,y)<.7){px(x-ox,y-oy,BEAMG);px(x+ox,y+oy,BEAMG);}if(bay(x,y+t)<.15){px(x-2*ox,y-2*oy,BEAMG);px(x+2*ox,y+2*oy,BEAMG);}}}}
+  for(const h of s.hits){const r=1.5+Math.sin(t*0.9)*0.8;for(let y=-3;y<=3;y++)for(let x=-3;x<=3;x++){const d=Math.sqrt(x*x+y*y);if(d<r)px(h.x+x,h.y+y,BEAMC);else if(d<r+1.3&&bay(x+t,y)<.6)px(h.x+x,h.y+y,h.rb?RAIN[(t>>2)%6]:BEAMG);}}}
+
+function renderMagnets(s,t){
+  for(const m of s.lv.magnets){const active=m.phase===2||m.phase===s.phase;const cx=m.x|0,cy=m.y|0;
+    if(!active&&!m.free){for(let y=-3;y<=3;y++)for(let x=-3;x<=3;x++){if((Math.abs(x)===3||Math.abs(y)===3)&&((x+y)&1))px(cx+x,cy+y,m.pol>0?COLNd:COLSd);}
+      if(m.on)px(cx,cy,m.pol>0?COLN:COLS_);continue;}
+    const lit=m.on,col=m.pol>0?(lit?COLN:COLNd):(lit?COLS_:COLSd);
+    for(let y=-4;y<=3;y++)for(let x=-4;x<=3;x++){const corner=(x===-4||x===3)&&(y===-4||y===3);if(corner)continue;const edge=x===-4||x===3||y===-4||y===3;
+      px(cx+x,cy+y,edge?INK:(y===-3&&lit?shade(col,1.25):col));}
+    const g=GLYPH[m.pol>0?'N':'S'];for(let r=0;r<5;r++)for(let k=0;k<3;k++)if(g[r]>>(2-k)&1)px(cx-1+k,cy-2+r,lit?INK:shade(col,.6));
+    if(lit){const ph=(t*0.12+m.x*0.05)%1;const rr=6+ph*9,fade=1-ph;
+      for(let a=0;a<48;a++){const an=a/48*Math.PI*2,x=Math.round(cx-0.5+Math.cos(an)*rr),y=Math.round(cy-0.5+Math.sin(an)*rr);if(bay(x,y)<fade*0.7&&!solidPix(s,x,y))px(x,y,col);}}
+    if(m.phase!==2&&!m.free){px(cx-4,cy-4,m.phase===0?C('#ffb36b'):C('#9fe3d0'));}}}
+
+function renderFluid(s){
+  const n=s.n;let x0=W,y0=H,x1=0,y1=0;
+  for(let i=0;i<n;i++){if(!s.alive[i])continue;const x=s.x[i],y=s.y[i];if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  if(x1<x0)return;x0=Math.max(1,Math.floor(x0-12));y0=Math.max(1,Math.floor(y0-12));x1=Math.min(W-2,Math.ceil(x1+12));y1=Math.min(H-2,Math.ceil(y1+12));
+  for(let y=y0-1;y<=y1+1;y++)dens.fill(0,y*W+x0-1,y*W+x1+2);
+  const R=5.4;
+  for(let i=0;i<n;i++){if(!s.alive[i])continue;const x=s.x[i],y=s.y[i];
+    const surf=s.rho[i]<REST*0.85?1.7:1;let a=Math.min(1.3,Math.max(0,(s.bs[i]-0.02)*30))*surf;
+    const ux=a>0?s.bux[i]:1,uy=a>0?s.buy[i]:0,Ra=R*(1+a),Rp=R*(1-0.28*Math.min(1,a)),box=Math.ceil(Ra),ix=Math.floor(x),iy=Math.floor(y);
+    const life=s.life[i];const amp=life<1?0.6+0.4*life:1;
+    for(let oy=-box;oy<=box;oy++){const yy=iy+oy;if(yy<y0||yy>y1)continue;const ddy=yy+0.5-y;const ro=yy*W;
+      for(let ox=-box;ox<=box;ox++){const xx=ix+ox;if(xx<x0||xx>x1)continue;const ddx=xx+0.5-x;const al=ddx*ux+ddy*uy,pe=-ddx*uy+ddy*ux;
+        const d2=(al/Ra)*(al/Ra)+(pe/Rp)*(pe/Rp);if(d2<1){const w=1-d2;dens[ro+xx]+=w*w*amp;}}}}
+  const TH=0.52,F=FL[s.phase],rim=RIM[s.phase];const Lx=-0.42,Ly=-0.62,Lz=0.66,Hn=Math.hypot(Lx,Ly,Lz+1),Hx=Lx/Hn,Hy=Ly/Hn,Hz=(Lz+1)/Hn;
+  const sol=s.lv.solid[s.phase];
+  for(let y=y0;y<=y1;y++){const ro=y*W;const r=(y/TS)|0;for(let x=x0;x<=x1;x++){const i=ro+x,d=dens[i];if(d<TH)continue;
+      if(sol[r*COLS+((x/TS)|0)])continue;
+      let nx=-(dens[i+1]-dens[i-1]),ny=-(dens[i+W]-dens[i-W]),nz=0.55;const nl=Math.hypot(nx,ny,nz);nx/=nl;ny/=nl;nz/=nl;
+      const diff=Math.max(0,nx*Lx+ny*Ly+nz*Lz),sp=Math.pow(Math.max(0,nx*Hx+ny*Hy+nz*Hz),22);
+      const v=0.06+0.42*diff+1.25*sp;let k=Math.floor(v*4.6+(bay(x,y)-0.5)*0.85);k=k<0?0:k>4?4:k;
+      buf[i]=(d<TH+0.22&&k<2)?rim:F[k];}}
+}
+
+const fx=[];
+function addFx(x,y,vx,vy,life,col,kind){if(fx.length<400)fx.push({x,y,vx,vy,life,max:life,col,kind});}
+function renderFx(s,t){for(let i=fx.length-1;i>=0;i--){const f=fx[i];f.x+=f.vx;f.y+=f.vy;f.life--;
+    if(f.kind==='steam'){f.vy-=0.01;f.vx*=0.98;}else if(f.kind==='spark'){f.vy+=0.005;}
+    if(f.life<=0){fx.splice(i,1);continue;}const a=f.life/f.max;if(bay(f.x|0,(f.y|0)+t)>a)continue;
+    const col=f.kind==='spark'?RAIN[((f.x+f.y+t)>>2)%6]:f.col;px(f.x,f.y,col);if(f.kind==='steam'&&a>0.5){px(f.x+1,f.y,col);px(f.x,f.y-1,col);}}}
+
+const grow=[];let bloomT=0;
+function renderPlants(s,t){
+  const pots=s.lv.pots;
+  for(let k=0;k<pots.length;k++){const p=pots[k];
+    const needC=s.def.sandbox?Math.max(1,s.N0*0.25):(s.def.needEach?Math.ceil(s.def.needEach*s.N0):Math.ceil(s.def.need*s.N0));
+    const target=Math.min(1,s.counts[k]/needC);grow[k]=(grow[k]||0)+(target-(grow[k]||0))*0.04;const g=grow[k];
+    const cx=Math.floor((p.minx+p.maxx)/2),base=p.maxy-4,hgt=4+g*(p.maxy-p.miny+12);
+    let tx=cx,ty=base;
+    for(let h=0;h<hgt;h++){const y=base-h,sw=Math.sin(t*0.035+h*0.17+k)*Math.min(2,h*0.08)*(0.4+g);const x=Math.round(cx+sw);px(x,y,STEM);tx=x;ty=y;
+      if(h>5&&h%7===3){const dir=((h/7)|0)%2?1:-1;px(x+dir,y,LEAF);px(x+2*dir,y-1,LEAF);px(x+dir,y-1,LEAFd);if(g>0.6)px(x+3*dir,y-1,LEAF);}}
+    const b=s.won||s.def.sandbox?Math.min(1,bloomT/50)*(s.def.sandbox?Math.min(1,target):1):0;
+    if(b>0.02){const np=7,len=2+b*6;for(let q=0;q<np;q++){const an=q/np*Math.PI*2+t*0.01;for(let r=1;r<=len;r++){const x=Math.round(tx+Math.cos(an)*r),y=Math.round(ty+Math.sin(an)*r*0.9);px(x,y,r>len-1.5?PETh:PET);}}
+      for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++)px(tx+x,ty+y,GOLD);
+      if(Math.random()<0.25*b)addFx(tx+(Math.random()-.5)*14,ty+(Math.random()-.5)*10,(Math.random()-.5)*0.2,-0.15-Math.random()*0.2,60,0,'spark');}
+    else{px(tx,ty-1,LEAF);px(tx-1,ty,LEAF);px(tx+1,ty,LEAF);}}
+}
+
+let phaseVis=0;
+function render(s,t){
+  const target=s.phase;phaseVis+=Math.sign(target-phaseVis)*Math.min(Math.abs(target-phaseVis),1/14);
+  compose(phaseVis);renderFilings(s);renderBeams(s,t);renderFluid(s);renderMagnets(s,t);renderPlants(s,t);renderFx(s,t);
+  ctx.putImageData(img,0,0);
+}
+
+// ================= audio =================
+let AC=null,master=null,drone=null,droneG=null,muted=false,lastDrip=0,lastSteam=0,lastDrain=0;
+function ensureAudio(){if(AC){if(AC.state==='suspended')AC.resume();return;}try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+  master=AC.createGain();master.gain.value=muted?0:0.55;master.connect(AC.destination);
+  droneG=AC.createGain();droneG.gain.value=0;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=420;droneG.connect(lp);lp.connect(master);
+  drone=[AC.createOscillator(),AC.createOscillator()];drone[0].type='sawtooth';drone[0].frequency.value=55;drone[1].type='sine';drone[1].frequency.value=110.6;drone.forEach(o=>{o.connect(droneG);o.start();});}
+function tone(f,dur,type='sine',vol=0.15,delay=0,f2=0){if(!AC)return;const t0=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t0);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+dur);
+  g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(vol,t0+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);o.connect(g);g.connect(master);o.start(t0);o.stop(t0+dur+0.05);}
+function noise(dur,f0,f1,vol=0.1,q=2){if(!AC)return;const t0=AC.currentTime,len=Math.floor(AC.sampleRate*dur),b=AC.createBuffer(1,len,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+  const src=AC.createBufferSource();src.buffer=b;const bp=AC.createBiquadFilter();bp.type='bandpass';bp.Q.value=q;bp.frequency.setValueAtTime(f0,t0);bp.frequency.exponentialRampToValueAtTime(f1,t0+dur);
+  const g=AC.createGain();g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);src.connect(bp);bp.connect(g);g.connect(master);src.start(t0);}
+const PENTA=[523.25,587.33,659.25,783.99,880,1046.5];
+const SFX={on(){tone(392,0.14,'triangle',0.16);tone(784,0.1,'sine',0.06,0.03);},off(){tone(330,0.12,'triangle',0.12,0,220);},
+  flip(){tone(660,0.09,'square',0.05);tone(440,0.12,'square',0.05,0.07);},
+  phase(p){noise(0.45,p?2400:500,p?400:2600,0.12,1.2);tone(p?196:262,0.5,'sine',0.12,0,p?147:330);},
+  drip(){const n=performance.now();if(n-lastDrip<70)return;lastDrip=n;tone(PENTA[(Math.random()*PENTA.length)|0]*(Math.random()<.3?0.5:1),0.16,'sine',0.05);},
+  steam(){const n=performance.now();if(n-lastSteam<90)return;lastSteam=n;noise(0.18,5000,2500,0.035,0.8);},
+  drain(){const n=performance.now();if(n-lastDrain<120)return;lastDrain=n;tone(110,0.15,'sine',0.06,0,70);},
+  win(){[523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>{tone(f,0.6,'triangle',0.1,i*0.11);tone(f*2,0.3,'sine',0.03,i*0.11+0.02);});},
+  place(){tone(240,0.08,'square',0.05);tone(480,0.1,'triangle',0.08,0.04);}};
+
+// ================= game state / ui =================
+const $=id=>document.getElementById(id);
+let save={done:{},stars:{}};try{save=JSON.parse(localStorage.getItem('lodestone-dew'))||save;}catch(e){}if(!save.stars)save.stars={};
+const starsFor=(def,pct)=>{const nd=def.need||.6;return pct>=nd+(1-nd)*.6?3:pct>=nd+(1-nd)*.3?2:1;};
+const starStr=n=>'\u2605'.repeat(n)+'\u2606'.repeat(3-n);
+const totalStars=()=>Object.values(save.stars).reduce((a,b)=>a+b,0);
+const persist=()=>{try{localStorage.setItem('lodestone-dew',JSON.stringify(save));}catch(e){}};
+let cur=0,sim=null,mode='title',demoT=0,winShown=false,hintTimer=0,frameT=0;
+function loadLevel(i,demo){cur=i;const def=LEVELS[i];def.map=def.map;sim=createSim(def);layers=[buildLayer(sim.lv,0),buildLayer(sim.lv,1)];phaseVis=sim.phase;grow.length=0;bloomT=0;fx.length=0;winShown=false;
+  if(!demo){$('lvname').innerHTML=def.sandbox?'<b>&#10047;</b> the bench':'<b>'+(i+1)+'</b> &middot; '+def.name;showHint(def.hint,9000);}updateUI();}
+function showHint(h,ms){const el=$('hint');el.innerHTML=h;el.style.opacity=1;clearTimeout(hintTimer);hintTimer=setTimeout(()=>el.style.opacity=0,ms||7000);}
+let toastT=0;function toast(m){const el=$('toast');el.textContent=m;el.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>el.style.opacity=0,2600);}
+function updateUI(){const ph=$('phase');ph.innerHTML=sim.phase?'&#9790;':'&#9728;';ph.classList.toggle('moon',!!sim.phase);
+  const def=sim.def;if(def.sandbox){$('mtxt').textContent='dew '+sim.aliveN;$('fill').style.width=Math.min(100,totalInPots(sim)/sim.N0*100)+'%';$('needmark').style.display='none';return;}
+  $('needmark').style.display='';const tot=totalInPots(sim);
+  if(def.needEach){$('mtxt').textContent=Array.from(sim.counts).map(v=>Math.round(v/sim.N0*100)+'%').join(' | ');$('needmark').style.left=(def.need*100)+'%';}
+  else{$('mtxt').textContent='dew '+Math.round(tot/sim.N0*100)+'%';$('needmark').style.left=(def.need*100)+'%';}
+  $('fill').style.width=Math.min(100,tot/sim.N0*100)+'%';}
+function setPhase(){if(!sim)return;sim.phase^=1;SFX.phase(sim.phase);updateUI();if(navigator.vibrate)navigator.vibrate(8);}
+function toggleMag(m){m.on=!m.on;m.on?SFX.on():SFX.off();if(navigator.vibrate)navigator.vibrate(6);
+  if(m.on&&!(m.phase===2||m.phase===sim.phase))toast(m.phase===0?'this magnet lives in the sun world':'this magnet lives in the moon world');}
+function flipMag(m){m.pol=-m.pol;SFX.flip();if(navigator.vibrate)navigator.vibrate([10,30,10]);}
+function resetLevel(){loadLevel(cur);}
+
+// sizing
+function fit(){const st=$('stage').getBoundingClientRect();let s=Math.min(st.width/W,(st.height-4)/H);if(s>=3)s=Math.floor(s);cv.style.width=Math.floor(W*s)+'px';cv.style.height=Math.floor(H*s)+'px';}
+window.addEventListener('resize',fit);
+
+// input
+let pdown=null;
+function worldPos(e){const r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H};}
+function nearestMag(p){let best=null,bd=15*15;for(const m of sim.lv.magnets){const d=(m.x-p.x)**2+(m.y-p.y)**2;if(d<bd){bd=d;best=m;}}return best;}
+cv.addEventListener('pointerdown',e=>{if(mode!=='play')return;ensureAudio();e.preventDefault();const p=worldPos(e);const m=nearestMag(p);
+  pdown={m,p,cx:e.clientX,cy:e.clientY,done:false,id:e.pointerId};
+  if(m)pdown.timer=setTimeout(()=>{if(pdown&&!pdown.done){pdown.done=true;flipMag(m);}},380);});
+cv.addEventListener('pointermove',e=>{if(pdown&&Math.hypot(e.clientX-pdown.cx,e.clientY-pdown.cy)>14){clearTimeout(pdown.timer);pdown.done=true;}});
+const pup=e=>{if(!pdown)return;clearTimeout(pdown.timer);if(!pdown.done){if(pdown.m)toggleMag(pdown.m);
+    else if(sim.def.sandbox){const p=pdown.p;if(!solidPx(sim,p.x,p.y)){const free=sim.lv.magnets.filter(m=>m.free);if(free.length>=6){const old=free[0];sim.lv.magnets.splice(sim.lv.magnets.indexOf(old),1);}
+        const m={c:-1,r:-1,x:p.x,y:p.y,phase:2,on:true,pol:1,free:true};sim.lv.magnets.push(m);SFX.place();}}}
+  pdown=null;};
+cv.addEventListener('pointerup',pup);cv.addEventListener('pointercancel',()=>{if(pdown)clearTimeout(pdown.timer);pdown=null;});
+cv.addEventListener('contextmenu',e=>{e.preventDefault();if(mode!=='play')return;const m=nearestMag(worldPos(e));if(m){if(pdown){clearTimeout(pdown.timer);pdown.done=true;}flipMag(m);}});
+$('phase').addEventListener('click',()=>{ensureAudio();if(mode==='play')setPhase();});
+$('breset').addEventListener('click',()=>{ensureAudio();if(mode==='play'){resetLevel();}});
+$('bhint').addEventListener('click',()=>{if(sim)showHint(sim.def.hint,9000);});
+$('bsound').addEventListener('click',()=>{ensureAudio();muted=!muted;if(master)master.gain.value=muted?0:0.55;$('bsound').style.opacity=muted?0.4:1;});
+$('bmenu').addEventListener('click',()=>openMenu());
+$('bplay').addEventListener('click',()=>{ensureAudio();let i=LEVELS.findIndex((l,k)=>!save.done[k]&&!l.sandbox);if(i<0)i=0;startLevel(i);});
+$('blevels').addEventListener('click',()=>{ensureAudio();openMenu();});
+const updTitleStars=()=>{const t=totalStars();$('tstars').textContent=t?t+' \u2605 gathered':'';};updTitleStars();
+$('bclose').addEventListener('click',()=>{$('menu').classList.add('hidden');if(mode==='title'){updTitleStars();$('title').classList.remove('hidden');}});
+$('bnext').addEventListener('click',()=>{$('win').classList.add('hidden');startLevel(Math.min(LEVELS.length-1,cur+1));});
+$('bstay').addEventListener('click',()=>{$('win').classList.add('hidden');});
+function openMenu(){const el=$('levels');el.innerHTML='';LEVELS.forEach((l,i)=>{const b=document.createElement('button');const unlocked=i===0||save.done[i-1]||save.done[i]||l.sandbox&&Object.keys(save.done).length>=3||i<=Object.keys(save.done).length;
+    if(i===0||i===8||l.sandbox){const h=document.createElement('div');h.className='chap';h.textContent=l.sandbox?'free play':i===0?'i \u00b7 morning garden':'ii \u00b7 the long dusk';el.appendChild(h);}
+    b.className=(save.done[i]?'done':'')+(unlocked?'':' locked');b.innerHTML=(l.sandbox?'&#10047;':(i+1))+'<small>'+l.name+'</small>'+(l.sandbox?'':'<span class="st">'+(save.done[i]?starStr(save.stars[i]||1):'')+'</span>');
+    b.onclick=()=>{if(!unlocked){toast('bloom the earlier pots first');return;}$('menu').classList.add('hidden');startLevel(i);};el.appendChild(b);});
+  const ns=LEVELS.filter(l=>!l.sandbox).length;$('mstars').textContent=totalStars()+'/'+ns*3+' \u2605';
+  $('title').classList.add('hidden');$('menu').classList.remove('hidden');}
+function startLevel(i){$('title').classList.add('hidden');$('menu').classList.add('hidden');$('win').classList.add('hidden');mode='play';loadLevel(i);fit();}
+window.addEventListener('keydown',e=>{if(mode!=='play')return;if(e.code==='Space'){e.preventDefault();ensureAudio();setPhase();}else if(e.key==='r'||e.key==='R'){resetLevel();}
+  else if(e.key==='Escape')openMenu();else if(e.key==='n'&&sim.won){$('bnext').click();}
+  else{const d=e.code.startsWith('Digit')?parseInt(e.code.slice(5)):NaN;if(d>=1&&d<=9){const m=sim.lv.magnets[d-1];if(m){ensureAudio();e.shiftKey?flipMag(m):toggleMag(m);}}}});
+
+// main loop
+let lastT=performance.now(),acc=0,uiTick=0;
+function frame(now){acc+=Math.min(100,now-lastT);lastT=now;let steps=0;
+  while(acc>=1000/60&&steps<3){acc-=1000/60;steps++;tick();}
+  if(sim)render(sim,frameT);requestAnimationFrame(frame);}
+function tick(){if(!sim)return;frameT++;
+  if(mode==='title'){demoT++;if(demoT%150===0){const ms=sim.lv.magnets;if(ms.length)ms.forEach((m,k)=>m.on=((demoT/150+k)%3===0));}if(demoT%420===0)sim.phase^=1;if(sim.aliveN<40)loadLevel(cur,true);}
+  stepSim(sim);
+  for(const ev of sim.events){if(ev.t==='steam'){for(let k=0;k<3;k++)addFx(ev.x+(Math.random()-.5)*3,ev.y,(Math.random()-.5)*0.3,-0.2-Math.random()*0.3,40,PAL[sim.phase].steam,'steam');if(mode==='play')SFX.steam();}
+    else if(ev.t==='drip'){if(mode==='play')SFX.drip();}else if(ev.t==='drain'){if(mode==='play')SFX.drain();}
+    else if(ev.t==='win'&&mode==='play'){SFX.win();save.done[cur]=1;persist();if(navigator.vibrate)navigator.vibrate([20,40,20,40,60]);}}
+  if(AC&&droneG){const n=sim.act.length;droneG.gain.setTargetAtTime(mode==='play'?Math.min(0.06,n*0.022):0,AC.currentTime,0.2);if(drone)drone[0].frequency.setTargetAtTime(55*(sim.phase?0.75:1),AC.currentTime,0.3);}
+  if(sim.won||sim.def.sandbox)bloomT++;
+  if(mode==='play'&&sim.won&&!winShown&&bloomT>80){winShown=true;const last=cur>=LEVELS.length-2;$('wintxt').textContent=sim.def.needEach?(['','','two','three','four'][sim.lv.pots.length]||'many')+' blooms':'bloomed';
+    const pct=totalInPots(sim)/sim.N0,st=starsFor(sim.def,pct),prev=save.stars[cur]||0;if(st>prev){save.stars[cur]=st;persist();}
+    $('winstars').textContent=starStr(st);
+    $('winsub').textContent=(last?'every pot in the garden is in flower. the bench is open for free play. ':'')+'the moss drank '+Math.round(pct*100)+'% of the dew.'+(st<3?' save more for '+(st+1)+' stars.':' a perfect garden.')+(st>prev&&prev?' new best!':'');
+    $('bnext').innerHTML=last?'the bench &rarr;':'next &rarr;';$('win').classList.remove('hidden');}
+  if(++uiTick%6===0&&mode==='play'){updateUI();if(sim.lost&&!sim.won&&uiTick%120===0)toast('not enough dew left \u00b7 tap \u21ba');}
+}
+// boot: demo behind title
+loadLevel(LEVELS.length-1,true);
+(()=>{const ms=sim.lv.magnets;ms.push({c:-1,r:-1,x:60,y:60,phase:2,on:true,pol:1,free:true},{c:-1,r:-1,x:130,y:110,phase:2,on:false,pol:-1,free:true},{c:-1,r:-1,x:90,y:200,phase:2,on:false,pol:1,free:true});})();
+fit();requestAnimationFrame(frame);
+
+// test hook
+window.__lod={LEVELS,createSim,stepSim,totalInPots,startLevel,get sim(){return sim;},render:(t)=>render(sim,t||0)};
+})();
+</script>
+</body>
+</html>
